@@ -1,4 +1,4 @@
-# JenkinsTty
+# Jenkins TTY
 
 A simple tty based interface to Jenkins
 
