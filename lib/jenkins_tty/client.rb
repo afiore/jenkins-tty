@@ -33,19 +33,28 @@ module JenkinsTty
       threads.each(&:join)
 
       threads.each do |t|
-        build     = t[:build]
-        result    = build.fetch('result')
-        number    = build.fetch('number')
-        timestamp = build.fetch('timestamp') / 1000
-        duration  = build.fetch('duration') / 1000
-        datetime  = Time.at(timestamp)
-        minutes   = duration / 60
-        seconds   = duration % 60
-        num       = number.to_s.rjust(3)
+        build          = t[:build]
+        k              = 'lastBuiltRevision'
+        last_built_rev = build['actions'].find { |h| h[k] }
+        result         = build.fetch('result')
+        number         = build.fetch('number')
+        timestamp      = build.fetch('timestamp') / 1000
+        duration       = build.fetch('duration') / 1000
+        datetime       = Time.at(timestamp)
+        minutes        = duration / 60
+        seconds        = duration % 60
+        num            = number.to_s.rjust(3)
+
+        if last_built_rev
+          sha1     = last_built_rev[k].fetch('SHA1')[0..9]
+          branch_h = last_built_rev[k].fetch('branch').first
+          branch   = branch_h['name'].gsub(/^refs\/remotes\/origin\//,'') if branch_h
+        end
+
         if $stdout.tty?
-          puts "- #{colorize(result, num)}: #{datetime.strftime('%e %b %y - %R')} (#{minutes}m #{seconds}s)"
+          puts "- #{colorize(result, "#{num}")}: #{sha1} #{branch}  #{datetime.strftime('%e %b %y - %R')} (#{minutes}m #{seconds}s)"
         else
-          puts [number, result, timestamp, duration].join(',')
+          puts [number, sha1, branch, result, timestamp, duration].join(',')
         end
       end
     end
@@ -58,7 +67,7 @@ module JenkinsTty
                "0;32"
              when 'red', 'FAILURE'
                "0;31"
-             when 'green_anime'
+             when 'green_anime', 'red_anime'
                "1;33"
              when 'grey', 'gray'
                "0;37"
