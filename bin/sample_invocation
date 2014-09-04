@@ -1,0 +1,3 @@
+#!/bin/bash
+
+ssh -t -p 4444 rentable@37.59.111.128 -C "/var/lib/jenkins/.rbenv/shims/ruby /var/lib/jenkins/jenkins-tty/bin/jenkins_tty.rb $@"
