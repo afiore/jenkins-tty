@@ -6,7 +6,8 @@ require 'pp'
 
 module JenkinsTty
   class Client
-    TEMPLATE_URL = "http://localhost:8080%s/api/json"
+    BASE_URL     = "http://localhost:8080"
+    TEMPLATE_URL = "#{BASE_URL}%s/api/json"
 
     def status
       h = req('/')
@@ -57,6 +58,11 @@ module JenkinsTty
           puts [number, sha1, branch, result, timestamp, duration].join(',')
         end
       end
+    end
+
+    def build_log(job_id, build_n)
+      uri = URI("#{BASE_URL}/job/#{job_id}/#{build_n}/logText/progressiveText?start=0")
+      puts Net::HTTP.get(uri)
     end
 
     private
