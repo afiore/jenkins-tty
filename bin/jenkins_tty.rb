@@ -17,7 +17,7 @@ options = {}
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [job-name] [-l]"
 
-  opts.on("-l n", OptionParser::DecimalNumeric, "print build log") do |n|
+  opts.on("-l [n]", OptionParser::DecimalNumeric, "print build log") do |n|
     options[:build] = n
     options[:cmd]   = :print_build_log
   end

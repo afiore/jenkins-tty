@@ -37,12 +37,27 @@ module JenkinsTty
       end
     end
 
-    def build_log(job_id, build_n)
+    def build_log(job_id, build_n = nil)
+      build_n ||= latest_build_number(job_id)
       uri = URI("#{BASE_URL}/job/#{job_id}/#{build_n}/logText/progressiveText?start=0")
-      puts Net::HTTP.get(uri)
+      resp =  Net::HTTP.get_response(uri)
+
+      if resp.code == '200'
+        puts resp.body
+      else
+        $stderr.puts "Cannot find a build log for #{job_id} build ##{build_n}"
+        exit 1
+      end
     end
 
     private
+
+    def latest_build_number(job_id)
+      h       = http_get("/job/#{job_id}")
+      build_n = h.fetch('lastBuild', {})['number']
+      $stderr.puts "No builds available yet for job #{job_id}" unless build_n
+      build_n
+    end
 
     def http_multi_get(paths)
       threads = paths.to_set.map do |path|
