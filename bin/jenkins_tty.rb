@@ -16,10 +16,16 @@ options = {}
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [job-name] [-l]"
+
   opts.on("-l n", OptionParser::DecimalNumeric, "print build log") do |n|
     options[:build] = n
     options[:cmd]   = :print_build_log
   end
+
+  opts.on("-b", "Perform a build") do
+    options[:cmd] = :build
+  end
+
 end.parse!
 
 cmd   = options[:cmd]
@@ -29,6 +35,8 @@ if job
   case cmd
   when :print_build_log
     client.build_log(job, build)
+  when :build
+    client.build(job)
   else
     client.job_status(job)
   end

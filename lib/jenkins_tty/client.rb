@@ -18,11 +18,22 @@ module JenkinsTty
     def job_status(job_id)
       h                 = http_get("/job/#{job_id}")
       request_paths     = h.fetch('builds').map { |b| "/job/#{job_id}/#{b.fetch('number')}" }
-      responses         = http_muti_get(request_paths.take(10)).values
+      responses         = http_multi_get(request_paths.take(10)).values
       presenters        = responses.map { |resp| Presenter::JobStatus.new(resp) }
 
       presenters.each do |job_status_presenter|
         puts job_status_presenter.render
+      end
+    end
+
+    def build(job_id)
+      uri = URI(BASE_URL + "/job/#{job_id}/build")
+      resp = Net::HTTP.post_form(uri, {})
+      if resp.code == '201'
+        puts "OK"
+      else
+        $stderr.puts("Something went wrong posting to #{uri}: #{resp.inspect}")
+        exit 1
       end
     end
 
@@ -33,7 +44,7 @@ module JenkinsTty
 
     private
 
-    def http_muti_get(paths)
+    def http_multi_get(paths)
       threads = paths.to_set.map do |path|
         Thread.new do
           t   = Thread.current
@@ -43,7 +54,7 @@ module JenkinsTty
         end
       end
       threads.each(&:join)
-      threads.reduce({}) {|acc, t| acc.merge(t[:path] => t[:response]) }
+      threads.reduce({}) {|acc, t| acc.merge(t[:request_path] => t[:response]) }
     end
 
     def http_get(path)
