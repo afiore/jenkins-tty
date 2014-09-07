@@ -1,62 +1,28 @@
 require 'net/http'
 require 'uri'
 require 'json'
-
-require 'pp'
+require 'set'
 
 module JenkinsTty
   class Client
-    BASE_URL     = "http://localhost:8080"
+    BASE_URL     = "http://localhost:9999"
     TEMPLATE_URL = "#{BASE_URL}%s/api/json"
 
     def status
-      h = req('/')
+      h = http_get('/')
       h.fetch('jobs').each do |j|
-        if $stdout.tty?
-          color  = j.fetch('color')
-          print "- "
-          puts colorize(color, j.fetch('name'))
-        else
-          puts j.fetch('name')
-        end
+        puts Presenter::Status.new(j).render
       end
     end
 
     def job_status(job_id)
-      h       = req("/job/#{job_id}")
-      threads = h.fetch('builds').take(10).map do |b|
-        Thread.new do
-          build_number = b.fetch('number')
-          b_h = req("/job/#{job_id}/#{build_number}")
-          Thread.current[:build] = b_h
-        end
-      end
-      threads.each(&:join)
+      h                 = http_get("/job/#{job_id}")
+      request_paths     = h.fetch('builds').map { |b| "/job/#{job_id}/#{b.fetch('number')}" }
+      responses         = http_muti_get(request_paths.take(10)).values
+      presenters        = responses.map { |resp| Presenter::JobStatus.new(resp) }
 
-      threads.each do |t|
-        build          = t[:build]
-        k              = 'lastBuiltRevision'
-        last_built_rev = build['actions'].find { |h| h[k] }
-        result         = build.fetch('result')
-        number         = build.fetch('number')
-        timestamp      = build.fetch('timestamp') / 1000
-        duration       = build.fetch('duration') / 1000
-        datetime       = Time.at(timestamp)
-        minutes        = duration / 60
-        seconds        = duration % 60
-        num            = number.to_s.rjust(3)
-
-        if last_built_rev
-          sha1     = last_built_rev[k].fetch('SHA1')[0..9]
-          branch_h = last_built_rev[k].fetch('branch').first
-          branch   = branch_h['name'].gsub(/^refs\/remotes\/origin\//,'') if branch_h
-        end
-
-        if $stdout.tty?
-          puts "- #{colorize(result, "#{num}")}: #{sha1} #{branch}  #{datetime.strftime('%e %b %y - %R')} (#{minutes}m #{seconds}s)"
-        else
-          puts [number, sha1, branch, result, timestamp, duration].join(',')
-        end
+      presenters.each do |job_status_presenter|
+        puts job_status_presenter.render
       end
     end
 
@@ -67,24 +33,20 @@ module JenkinsTty
 
     private
 
-    def colorize(color, s)
-      code = case color
-             when 'green', 'blue', 'SUCCESS'
-               "0;32"
-             when 'red', 'FAILURE'
-               "0;31"
-             when 'green_anime', 'red_anime'
-               "1;33"
-             when 'grey', 'gray'
-               "0;37"
-             else
-               "1;37"
-             end
-
-      "\e[0#{code}m#{s}\e[00m"
+    def http_muti_get(paths)
+      threads = paths.to_set.map do |path|
+        Thread.new do
+          t   = Thread.current
+          b_h = http_get(path)
+          t[:response]     = b_h
+          t[:request_path] = path
+        end
+      end
+      threads.each(&:join)
+      threads.reduce({}) {|acc, t| acc.merge(t[:path] => t[:response]) }
     end
 
-    def req(path)
+    def http_get(path)
       res_body = Net::HTTP.get(URI(TEMPLATE_URL % path))
       JSON.parse(res_body)
     end

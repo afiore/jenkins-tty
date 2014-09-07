@@ -1,7 +1,12 @@
 #! /usr/bin/env ruby
 #
 $LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'presenter'))
 
+
+require 'jenkins_tty/presenter/base'
+require 'jenkins_tty/presenter/status'
+require 'jenkins_tty/presenter/job_status'
 require 'jenkins_tty/client'
 require 'optparse'
 
