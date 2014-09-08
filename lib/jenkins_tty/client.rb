@@ -5,7 +5,7 @@ require 'set'
 
 module JenkinsTty
   class Client
-    BASE_URL     = "http://localhost:9999"
+    BASE_URL     = "http://localhost:8080"
     TEMPLATE_URL = "#{BASE_URL}%s/api/json"
 
     def status
