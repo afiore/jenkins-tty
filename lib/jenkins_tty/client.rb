@@ -28,7 +28,7 @@ module JenkinsTty
 
     def build(job_id, params)
       params_str = params.empty? ? '' : '?' + params.map { |p| "#{p}=#{v}" }.join('&')
-      uri        = URI(BASE_URL + "/job/#{job_id}/buildWithParams#{params_str}")
+      uri        = URI(BASE_URL + "/job/#{job_id}/buildWithParameters#{params_str}")
       resp       = Net::HTTP.post_form(uri, {})
       if resp.code == '201'
         puts "OK"
