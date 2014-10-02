@@ -22,21 +22,24 @@ OptionParser.new do |opts|
     options[:cmd]   = :print_build_log
   end
 
-  opts.on("-b", "Perform a build") do
+  opts.on("-b [rev]", "Perform a build") do |rev|
     options[:cmd] = :build
+    options[:rev] = rev
   end
 
 end.parse!
 
 cmd   = options[:cmd]
 build = options[:build]
+rev   = options[:rev]
 
 if job
   case cmd
   when :print_build_log
     client.build_log(job, build)
   when :build
-    client.build(job)
+    params = rev ? { 'GIT_REV' => rev } : {}
+    client.build(job, params)
   else
     client.job_status(job)
   end
