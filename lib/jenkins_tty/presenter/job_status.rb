@@ -22,9 +22,9 @@ module Presenter
 
     def render_tty
       [
-        "- #{colorize(@result, "#{@num}")}:",
+        "- #{colorize(@result, "#{@num}")}:".rjust(7),
         @sha1,
-        @branch.rjust(8),
+        @branch[0..17].rjust(20),
         @datetime.strftime('%e %b %y - %R'),
         "(#{@minutes}m #{@seconds}s)".rjust(8)
       ].join(' ')
