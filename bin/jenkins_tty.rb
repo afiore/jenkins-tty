@@ -1,7 +1,14 @@
 #! /usr/bin/env ruby
-#
-$LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH << File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'presenter'))
+
+
+current_file =
+  if File.symlink?(__FILE__)
+    File.readlink(__FILE__)
+  else
+    __FILE__
+  end
+$LOAD_PATH << File.expand_path(File.join(File.dirname(current_file), '..', 'lib'))
+$LOAD_PATH << File.expand_path(File.join(File.dirname(current_file), '..', 'lib', 'presenter'))
 
 
 require 'jenkins_tty/presenter/base'
